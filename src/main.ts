@@ -4,7 +4,7 @@ import { coinsForScore, loadProgress, saveProgress } from './meta/progress';
 import { SkillDef, buySkill, computePerks } from './meta/skills';
 import { attachPointerInput, CellPoint } from './ui/input';
 import { BoardRenderer, FloatingText, HintView, SelectionView } from './ui/renderer';
-import { renderSkillTree } from './ui/skilltree';
+import { SkillTreeView } from './ui/skilltree';
 
 /** 목표 합별 강조색 (10=초록, 13=보라, 17=청록, 20=금색) */
 const TARGET_COLORS: Record<number, string> = {
@@ -46,7 +46,6 @@ const resultBestEl = $('result-best');
 const bestBoxStartEl = $('best-box-start');
 const coinsStartEl = $('coins-start');
 const skillCoinsEl = $('skill-coins');
-const skillListEl = $('skill-list');
 
 const canvas = $<HTMLCanvasElement>('board');
 const renderer = new BoardRenderer(canvas, BOARD_COLS, BOARD_ROWS);
@@ -204,23 +203,24 @@ rerollBtn.addEventListener('click', () => {
 
 let skillReturnTo: HTMLElement = startOverlay;
 
-function refreshSkillTree(): void {
-  renderSkillTree(skillListEl, progress, onBuySkill);
-  updateCoinDisplays();
-}
-
 function onBuySkill(def: SkillDef): void {
   if (buySkill(progress, def)) {
     saveProgress(progress);
-    refreshSkillTree();
+    skillTree.refresh();
+    updateCoinDisplays();
   }
 }
+
+const skillTree = new SkillTreeView(() => progress, onBuySkill);
 
 function openSkillTree(returnTo: HTMLElement): void {
   skillReturnTo = returnTo;
   returnTo.classList.add('hidden');
-  refreshSkillTree();
   skillOverlay.classList.remove('hidden');
+  // 뷰포트가 표시된 뒤에야 크기를 알 수 있으므로 여기서 리셋
+  skillTree.resetView();
+  skillTree.refresh();
+  updateCoinDisplays();
 }
 
 $('skill-open-start').addEventListener('click', () => openSkillTree(startOverlay));

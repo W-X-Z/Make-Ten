@@ -35,7 +35,7 @@ src/
   ui/
     renderer.ts    # 캔버스 렌더링 (타일, 선택 영역, 합계 배지, 힌트, 플로팅)
     input.ts       # 포인터(터치/마우스) 드래그 입력
-    skilltree.ts   # 스킬트리 오버레이 렌더링
+    skilltree.ts   # 노드 그래프형 스킬트리 (팬/줌, 노드 탭 → 상세·구매 패널)
   main.ts      # DOM/HUD 연결, 게임 루프, 화면 전환
 ```
 

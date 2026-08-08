@@ -295,25 +295,29 @@ body {
   padding: 1px 7px;
 }
 
-/* ---------- 스킬트리 ---------- */
+/* ---------- 스킬트리 (노드 그래프) ---------- */
 
-.skill-card {
+.skill-screen {
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
-  max-height: 88dvh;
-  padding: 22px 20px;
-  text-align: left;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(91, 140, 255, 0.07), transparent 60%),
+    #10131d;
 }
 
 .skill-head {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .skill-head h2 {
-  font-size: 22px;
+  flex: 1;
+  font-size: 20px;
   font-weight: 900;
 }
 
@@ -321,39 +325,150 @@ body {
   margin-bottom: 0;
 }
 
-#skill-list {
+.icon-btn {
+  border: none;
+  border-radius: 10px;
+  width: 36px;
+  height: 36px;
+  font-size: 16px;
+  font-weight: 800;
+  color: #c3cadd;
+  background: rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+}
+
+#skill-viewport {
+  position: relative;
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
-  margin-bottom: 14px;
-  padding-right: 4px;
+  overflow: hidden;
+  touch-action: none;
+  cursor: grab;
 }
 
-.skill-branch {
-  margin-bottom: 16px;
+#skill-viewport:active {
+  cursor: grabbing;
 }
 
-.branch-name {
-  --branch-color: #5b8cff;
-  font-size: 14px;
-  font-weight: 800;
-  color: var(--branch-color);
-  border-left: 3px solid var(--branch-color);
-  padding-left: 8px;
-  margin-bottom: 8px;
+#skill-world {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
 }
 
-.skill-row {
+#skill-edges {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+}
+
+#skill-edges line {
+  stroke: rgba(255, 255, 255, 0.13);
+  stroke-width: 3;
+}
+
+#skill-edges line.lit {
+  stroke: #c9a24b;
+}
+
+.skill-node {
+  --node-color: #ffd75e;
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  border-radius: 15px;
+  background: #1d2333;
+  border: 2.5px solid rgba(255, 255, 255, 0.16);
   display: flex;
   align-items: center;
-  gap: 10px;
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 12px;
-  padding: 10px 12px;
-  margin-bottom: 6px;
+  justify-content: center;
+  cursor: pointer;
 }
 
-.skill-info {
+.skill-node .node-icon {
+  font-size: 27px;
+  pointer-events: none;
+}
+
+.skill-node .node-badge {
+  position: absolute;
+  right: -8px;
+  bottom: -8px;
+  background: #0e111a;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 7px;
+  color: #ffd75e;
+  pointer-events: none;
+}
+
+.skill-node.owned {
+  border-color: var(--node-color);
+  box-shadow: 0 0 14px rgba(255, 215, 94, 0.22);
+}
+
+.skill-node.maxed .node-badge {
+  color: #37d67a;
+  border-color: #37d67a;
+}
+
+.skill-node.locked {
+  opacity: 0.35;
+  filter: grayscale(0.8);
+}
+
+.skill-node.buyable {
+  border-color: #f0f3fa;
+  animation: node-pulse 1.3s ease-in-out infinite;
+}
+
+@keyframes node-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 9px rgba(255, 255, 255, 0);
+  }
+}
+
+.skill-node.selected {
+  outline: 3px solid #5b8cff;
+  outline-offset: 3px;
+}
+
+.skill-node.root {
+  width: 68px;
+  height: 68px;
+  background: #2a3147;
+  border-color: #c9a24b;
+  cursor: default;
+}
+
+#skill-detail {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(29, 35, 51, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 14px 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+
+#skill-detail.hidden {
+  display: none;
+}
+
+.detail-info {
   flex: 1;
   min-width: 0;
 }
@@ -361,13 +476,6 @@ body {
 .skill-name {
   font-size: 15px;
   font-weight: 800;
-}
-
-.skill-pips {
-  margin-left: 8px;
-  font-size: 11px;
-  color: #ffd75e;
-  letter-spacing: 2px;
 }
 
 .skill-desc {

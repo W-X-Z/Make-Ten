@@ -71,13 +71,23 @@
       </div>
 
       <div id="skill-overlay" class="overlay hidden">
-        <div class="overlay-card skill-card">
+        <div class="skill-screen">
           <div class="skill-head">
             <h2>스킬트리</h2>
             <div id="skill-coins" class="coin-chip">🪙 0</div>
+            <button id="skill-close-btn" class="icon-btn" type="button" aria-label="닫기">✕</button>
           </div>
-          <div id="skill-list"></div>
-          <button id="skill-close-btn" class="primary-btn" type="button">닫기</button>
+          <div id="skill-viewport">
+            <div id="skill-world"></div>
+            <div id="skill-detail" class="hidden">
+              <div class="detail-info">
+                <div id="detail-name" class="skill-name"></div>
+                <div id="detail-desc" class="skill-desc"></div>
+                <div id="detail-req" class="skill-req hidden"></div>
+              </div>
+              <button id="detail-buy" class="skill-buy-btn" type="button"></button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
