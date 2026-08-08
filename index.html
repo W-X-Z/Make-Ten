@@ -22,6 +22,7 @@
             <span class="hud-label">점수</span>
             <span id="score">0</span>
           </div>
+          <div id="targets" title="제거 가능한 합"></div>
           <div id="time-box">
             <span class="hud-label">시간</span>
             <span id="time">120</span>
@@ -51,7 +52,9 @@
           </p>
           <p class="rules sub">지운 자리는 빈칸으로 남아요.<br />조합이 마르면 리롤로 새 숫자를 받으세요.</p>
           <div id="best-box-start" class="best-box"></div>
+          <div id="coins-start" class="coin-chip">🪙 0</div>
           <button id="start-btn" class="primary-btn" type="button">게임 시작</button>
+          <button id="skill-open-start" class="secondary-btn" type="button">스킬트리</button>
         </div>
       </div>
 
@@ -60,8 +63,21 @@
           <h2 class="result-title">시간 종료!</h2>
           <div class="result-score-label">획득 점수</div>
           <div id="result-score" class="result-score">0</div>
+          <div id="result-coins" class="coin-earn"></div>
           <div id="result-best" class="best-box"></div>
           <button id="retry-btn" class="primary-btn" type="button">다시하기</button>
+          <button id="skill-open-result" class="secondary-btn" type="button">스킬트리</button>
+        </div>
+      </div>
+
+      <div id="skill-overlay" class="overlay hidden">
+        <div class="overlay-card skill-card">
+          <div class="skill-head">
+            <h2>스킬트리</h2>
+            <div id="skill-coins" class="coin-chip">🪙 0</div>
+          </div>
+          <div id="skill-list"></div>
+          <button id="skill-close-btn" class="primary-btn" type="button">닫기</button>
         </div>
       </div>
     </div>
