@@ -26,7 +26,7 @@ export function loadProgress(): Progress {
         best: Number(parsed.best) || 0,
         skills: typeof parsed.skills === 'object' && parsed.skills ? parsed.skills : {},
         targets: Array.isArray(parsed.targets)
-          ? parsed.targets.filter((t) => [13, 17, 20].includes(t)).slice(0, 3)
+          ? parsed.targets.filter((t) => [13, 15, 17, 20].includes(t)).slice(0, 3)
           : [17],
       };
     }

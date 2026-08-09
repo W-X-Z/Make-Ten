@@ -2,14 +2,16 @@ import { TARGET_SUM, normalizeRect, sumTiles, tilesInRect } from './core/board';
 import { Game } from './core/game';
 import { coinsForScore, loadProgress, saveProgress } from './meta/progress';
 import { SkillDef, buySkill, computePerks, skillLevel, unlockedTargets } from './meta/skills';
+import { AudioEngine } from './ui/audio';
 import { attachPointerInput, CellPoint } from './ui/input';
 import { BoardRenderer, FloatingText, HintView, SelectionView } from './ui/renderer';
 import { SkillTreeView } from './ui/skilltree';
 
-/** 목표 합별 강조색 (10=초록, 13=보라, 17=청록, 20=금색) */
+/** 목표 합별 강조색 (10=초록, 13=보라, 15=분홍, 17=청록, 20=금색) */
 const TARGET_COLORS: Record<number, string> = {
   10: '#37d67a',
   13: '#b06cff',
+  15: '#ff7eb6',
   17: '#4dd6d2',
   20: '#ffb84d',
 };
@@ -17,12 +19,12 @@ const TARGET_COLORS: Record<number, string> = {
 /** 목표 선택 화면에 노출되는 특수 숫자 정의 */
 const TARGET_OPTIONS: { sum: number; desc: string; skill: string | null }[] = [
   { sum: 13, desc: '십자 폭발! 인접 타일 제거', skill: 'lucky_13' },
+  { sum: 15, desc: '랜덤 보상! 3배/시간/폭발', skill: 'mystery_15' },
   { sum: 17, desc: '보드의 7이 모두 1로!', skill: null },
   { sum: 20, desc: '해당 조합 점수 3배!', skill: 'double_20' },
 ];
 
 const MAX_SPECIAL_TARGETS = 3;
-const HINT_IDLE_MS = 5_000;
 const BOARD_COLS = 7;
 const BOARD_ROWS = 10;
 
@@ -57,6 +59,7 @@ const skillCoinsEl = $('skill-coins');
 
 const canvas = $<HTMLCanvasElement>('board');
 const renderer = new BoardRenderer(canvas, BOARD_COLS, BOARD_ROWS);
+const audio = new AudioEngine();
 
 // 테스트용 URL 파라미터: ?reset=1 진행 초기화, ?coins=1000 코인 설정
 const testParams = new URLSearchParams(location.search);
@@ -142,9 +145,13 @@ attachPointerInput(canvas, {
         if (result.convertedSevens > 0) {
           flashBoard(`7 → 1 변환 ×${result.convertedSevens}`);
         }
+        if (result.mystery === 'triple') flashBoard('🎁 점수 3배!');
+        if (result.mystery === 'time') flashBoard('🎁 +5초!');
+        if (result.mystery === 'boom') flashBoard('🎁 폭발!');
         if (result.boardReset) {
           flashBoard('조합 소진 — 보드 초기화!');
         }
+        audio.sfxClear(result.sum);
         navigator.vibrate?.(result.extraTiles.length > 0 || result.convertedSevens > 0 ? 60 : 30);
         invalidateHint();
         updateHud();
@@ -194,7 +201,8 @@ function updateHud(): void {
 
 function showResult(): void {
   resultShown = true;
-  const earned = coinsForScore(game.score);
+  audio.sfxEnd();
+  const earned = Math.floor(coinsForScore(game.score) * game.perks.coinBonus);
   progress.coins += earned;
   const isNewBest = game.score > progress.best;
   if (isNewBest) progress.best = game.score;
@@ -279,7 +287,10 @@ function startNewGame(): void {
   updateHud();
 }
 
-$('start-btn').addEventListener('click', openSelectScreen);
+$('start-btn').addEventListener('click', () => {
+  audio.startMusic(); // 사용자 제스처 안에서 BGM 시작 (autoplay 정책)
+  openSelectScreen();
+});
 $('play-btn').addEventListener('click', startNewGame);
 $('back-btn').addEventListener('click', () => {
   selectScreen.classList.add('hidden');
@@ -298,6 +309,7 @@ $('home-btn').addEventListener('click', () => {
 
 resetBtn.addEventListener('click', () => {
   if (game.reset()) {
+    audio.sfxReset();
     navigator.vibrate?.(15);
     dragAnchor = null;
     selection = null;
@@ -307,6 +319,22 @@ resetBtn.addEventListener('click', () => {
   }
 });
 
+// ---------- 사운드 토글 ----------
+
+const soundBtns = [$('sound-btn'), $('sound-btn-home')];
+
+function updateSoundButtons(): void {
+  for (const btn of soundBtns) btn.textContent = audio.muted ? '🔇' : '🔊';
+}
+
+for (const btn of soundBtns) {
+  btn.addEventListener('click', () => {
+    audio.toggleMute();
+    updateSoundButtons();
+  });
+}
+updateSoundButtons();
+
 // ---------- 스킬트리 오버레이 ----------
 
 let skillReturnTo: HTMLElement = homeScreen;
@@ -315,6 +343,7 @@ function onBuySkill(def: SkillDef): void {
   if (buySkill(progress, def)) {
     // 새로 해금한 목표는 바로 선택에 추가 (최대치 내에서)
     if (def.id === 'lucky_13' && skillLevel(progress, 'lucky_13') === 1) autoSelect(13);
+    if (def.id === 'mystery_15' && skillLevel(progress, 'mystery_15') === 1) autoSelect(15);
     if (def.id === 'double_20' && skillLevel(progress, 'double_20') === 1) autoSelect(20);
     saveProgress(progress);
     skillTree.refresh();
@@ -377,11 +406,11 @@ function frame(ts: number): void {
   for (const f of floats) f.ageMs += dt;
   floats = floats.filter((f) => f.ageMs < 800);
 
-  // 힌트: 스킬 보유 + 5초간 입력 없음 시 표시
+  // 힌트: 스킬 보유 + 일정 시간 입력 없음 시 표시 (대기 시간은 스킬 레벨에 따라)
   let hint: HintView | null = null;
   if (game.perks.hint && game.phase === 'playing') {
     if (!dragAnchor) idleMs += dt;
-    if (idleMs >= HINT_IDLE_MS) {
+    if (idleMs >= game.perks.hintDelayMs) {
       if (hintDirty) {
         hintRect = game.findHintCombo();
         hintDirty = false;

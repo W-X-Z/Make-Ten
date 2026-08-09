@@ -22,8 +22,11 @@ const MAX_GEN_ATTEMPTS = 100;
 
 export type Rng = () => number;
 
-function randomDigit(rng: Rng): number {
-  return 1 + Math.floor(rng() * 9);
+/** lowBias가 켜지면 6~9가 나왔을 때 일정 확률로 1~5로 다시 굴린다 (숫자 감각 스킬) */
+function randomDigit(rng: Rng, lowBias = false): number {
+  const d = 1 + Math.floor(rng() * 9);
+  if (lowBias && d > 5 && rng() < 0.4) return 1 + Math.floor(rng() * 5);
+  return d;
 }
 
 export function normalizeRect(c0: number, r0: number, c1: number, r1: number): Rect {
@@ -35,13 +38,18 @@ export function normalizeRect(c0: number, r0: number, c1: number, r1: number): R
   };
 }
 
-export function createBoard(cols: number, rows: number, rng: Rng = Math.random): Board {
+export function createBoard(
+  cols: number,
+  rows: number,
+  rng: Rng = Math.random,
+  lowBias = false,
+): Board {
   let board: Board = { cols, rows, cells: [] };
   for (let attempt = 0; attempt < MAX_GEN_ATTEMPTS; attempt++) {
     board = {
       cols,
       rows,
-      cells: Array.from({ length: cols * rows }, () => randomDigit(rng)),
+      cells: Array.from({ length: cols * rows }, () => randomDigit(rng, lowBias)),
     };
     if (countCombos(board) >= MIN_INITIAL_COMBOS) return board;
   }

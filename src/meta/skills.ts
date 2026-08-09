@@ -39,6 +39,24 @@ export const SKILLS: SkillDef[] = [
     costs: [20, 50, 110, 240, 500],
   },
   {
+    id: 'pair_master',
+    branch: 'score',
+    name: '페어 마스터',
+    desc: '두 타일로 10을 만들면 +5점',
+    maxLevel: 1,
+    costs: [60],
+    requires: { id: 'score_boost', level: 1 },
+  },
+  {
+    id: 'tile_bonus',
+    branch: 'score',
+    name: '타일 보너스',
+    desc: '3타일 이상 조합의 타일당 점수 +1 / 레벨',
+    maxLevel: 2,
+    costs: [90, 220],
+    requires: { id: 'score_boost', level: 2 },
+  },
+  {
     id: 'big_hunter',
     branch: 'score',
     name: '대물 사냥꾼',
@@ -46,6 +64,24 @@ export const SKILLS: SkillDef[] = [
     maxLevel: 1,
     costs: [150],
     requires: { id: 'score_boost', level: 2 },
+  },
+  {
+    id: 'big_hunter_2',
+    branch: 'score',
+    name: '대물 사냥꾼 II',
+    desc: '5타일 이상 조합 배율 2배 → 3배',
+    maxLevel: 1,
+    costs: [400],
+    requires: { id: 'big_hunter', level: 1 },
+  },
+  {
+    id: 'first_strike',
+    branch: 'score',
+    name: '스타트 대시',
+    desc: '시작 후 10초 동안 점수 1.5배',
+    maxLevel: 1,
+    costs: [150],
+    requires: { id: 'tile_bonus', level: 1 },
   },
   // ── 조합 계열 (목표 선택 화면에서 고를 수 있는 숫자를 해금) ──
   {
@@ -57,6 +93,32 @@ export const SKILLS: SkillDef[] = [
     costs: [80],
   },
   {
+    id: 'cross_amp',
+    branch: 'combination',
+    name: '폭발 증폭',
+    desc: '십자 폭발 타일당 점수 +3 → +7',
+    maxLevel: 1,
+    costs: [140],
+    requires: { id: 'lucky_13', level: 1 },
+  },
+  {
+    id: 'mystery_15',
+    branch: 'combination',
+    name: '미스터리 15',
+    desc: '목표 15 해금! 성공 시 랜덤 보상 (점수 3배 / +5초 / 폭발)',
+    maxLevel: 1,
+    costs: [200],
+    requires: { id: 'lucky_13', level: 1 },
+  },
+  {
+    id: 'seven_alchemy',
+    branch: 'combination',
+    name: '7의 연금술',
+    desc: '17 성공 시 변환된 7 하나당 +2점',
+    maxLevel: 1,
+    costs: [120],
+  },
+  {
     id: 'double_20',
     branch: 'combination',
     name: '더블 20',
@@ -64,6 +126,15 @@ export const SKILLS: SkillDef[] = [
     maxLevel: 1,
     costs: [250],
     requires: { id: 'lucky_13', level: 1 },
+  },
+  {
+    id: 'crown_20',
+    branch: 'combination',
+    name: '킹 20',
+    desc: '합 20 점수 배율 3배 → 5배',
+    maxLevel: 1,
+    costs: [600],
+    requires: { id: 'double_20', level: 1 },
   },
   // ── 시간 계열 ──
   {
@@ -78,10 +149,28 @@ export const SKILLS: SkillDef[] = [
     id: 'hourglass',
     branch: 'time',
     name: '모래시계',
-    desc: '합 10 제거 시간 보너스 +0.3초 (기본 +1초에 추가)',
-    maxLevel: 1,
-    costs: [180],
+    desc: '합 10 제거 시간 보너스 +0.3초 / 레벨 (기본 +1초에 추가)',
+    maxLevel: 2,
+    costs: [180, 350],
     requires: { id: 'time_extend', level: 1 },
+  },
+  {
+    id: 'warmup',
+    branch: 'time',
+    name: '워밍업',
+    desc: '시작 후 5초간 시간이 절반 속도로 감소',
+    maxLevel: 1,
+    costs: [120],
+    requires: { id: 'time_extend', level: 1 },
+  },
+  {
+    id: 'special_clock',
+    branch: 'time',
+    name: '특수 시계',
+    desc: '특수 목표(13/15/17/20) 제거 시 +1초',
+    maxLevel: 1,
+    costs: [260],
+    requires: { id: 'time_extend', level: 2 },
   },
   {
     id: 'last_spurt',
@@ -114,9 +203,25 @@ export const SKILLS: SkillDef[] = [
     id: 'hint',
     branch: 'util',
     name: '힌트',
-    desc: '5초간 입력이 없으면 가능한 조합 하나를 알려줌',
+    desc: '5초간 입력이 없으면 조합 힌트 (Lv.2: 2.5초로 단축)',
+    maxLevel: 2,
+    costs: [100, 200],
+  },
+  {
+    id: 'number_sense',
+    branch: 'util',
+    name: '숫자 감각',
+    desc: '보드에 작은 숫자(1~5)가 더 자주 등장',
     maxLevel: 1,
-    costs: [100],
+    costs: [220],
+  },
+  {
+    id: 'coin_boost',
+    branch: 'util',
+    name: '코인 부스트',
+    desc: '판 종료 시 획득 코인 +10% / 레벨',
+    maxLevel: 3,
+    costs: [100, 250, 550],
   },
 ];
 
@@ -147,6 +252,7 @@ export function buySkill(progress: Progress, def: SkillDef): boolean {
 export function unlockedTargets(progress: Progress): number[] {
   const pool: number[] = [];
   if (skillLevel(progress, 'lucky_13') > 0) pool.push(13);
+  if (skillLevel(progress, 'mystery_15') > 0) pool.push(15);
   pool.push(17);
   if (skillLevel(progress, 'double_20') > 0) pool.push(20);
   return pool;
@@ -159,12 +265,24 @@ export function computePerks(progress: Progress): Perks {
     ...BASE_PERKS,
     scoreMultiplier: 1 + 0.1 * lv('score_boost'),
     bigHunter: lv('big_hunter') > 0,
+    bigHunterMult: lv('big_hunter_2') > 0 ? 3 : 2,
+    pairBonus: lv('pair_master') > 0 ? 5 : 0,
+    tileBonus: 2 + lv('tile_bonus'),
+    startDash: lv('first_strike') > 0,
     extraTimeMs: 5_000 * lv('time_extend'),
-    timePerClearMs: lv('hourglass') > 0 ? 300 : 0,
+    timePerClearMs: 300 * lv('hourglass'),
+    warmup: lv('warmup') > 0,
+    specialTimeMs: lv('special_clock') > 0 ? 1_000 : 0,
     lastSpurt: lv('last_spurt') > 0,
     resets: 1 + lv('reroll_charge'),
     resetRush: lv('reroll_rush') > 0,
     hint: lv('hint') > 0,
+    hintDelayMs: lv('hint') >= 2 ? 2_500 : 5_000,
+    crossPoints: lv('cross_amp') > 0 ? 7 : 3,
+    sevenPoints: lv('seven_alchemy') > 0 ? 2 : 0,
+    twentyMult: lv('crown_20') > 0 ? 5 : 3,
+    lowBias: lv('number_sense') > 0,
+    coinBonus: 1 + 0.1 * lv('coin_boost'),
     specialTargets: unlockedTargets(progress),
   };
 }

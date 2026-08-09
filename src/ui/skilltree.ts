@@ -25,18 +25,30 @@ const LAYOUT: Record<string, LayoutEntry> = {
   root: { icon: '🔟', x: 0, y: 0 },
   // 배점 — 왼쪽
   score_boost: { icon: '💰', x: -1.4, y: -0.2 },
-  big_hunter: { icon: '🎣', x: -2.7, y: 0.3 },
+  pair_master: { icon: '🎯', x: -2.6, y: -1.2 },
+  tile_bonus: { icon: '📦', x: -2.8, y: -0.2 },
+  big_hunter: { icon: '🎣', x: -2.5, y: 0.9 },
+  big_hunter_2: { icon: '🐋', x: -3.6, y: 1.5 },
+  first_strike: { icon: '⚡', x: -4.0, y: -0.7 },
   // 조합 — 위
   lucky_13: { icon: '🍀', x: 0.1, y: -1.4 },
-  double_20: { icon: '💎', x: -0.6, y: -2.5 },
+  seven_alchemy: { icon: '⚗️', x: 1.2, y: -1.1 },
+  cross_amp: { icon: '💥', x: 1.1, y: -2.4 },
+  mystery_15: { icon: '🎁', x: -0.9, y: -2.3 },
+  double_20: { icon: '💎', x: 0.2, y: -3.1 },
+  crown_20: { icon: '👑', x: 0.3, y: -4.3 },
   // 시간 — 오른쪽
-  time_extend: { icon: '⏳', x: 1.4, y: 0.2 },
-  hourglass: { icon: '⌛', x: 2.7, y: -0.5 },
-  last_spurt: { icon: '🔥', x: 2.7, y: 0.9 },
+  time_extend: { icon: '⏳', x: 1.5, y: 0.2 },
+  hourglass: { icon: '⌛', x: 2.7, y: -0.6 },
+  warmup: { icon: '🧊', x: 2.8, y: 0.4 },
+  special_clock: { icon: '🕰️', x: 2.7, y: 1.3 },
+  last_spurt: { icon: '🔥', x: 4.0, y: -0.4 },
   // 유틸 — 아래
   reroll_charge: { icon: '🔄', x: -0.7, y: 1.4 },
   reroll_rush: { icon: '🚀', x: -1.7, y: 2.3 },
   hint: { icon: '💡', x: 0.9, y: 1.3 },
+  number_sense: { icon: '🎲', x: 0.0, y: 2.5 },
+  coin_boost: { icon: '🪙', x: 1.8, y: 2.2 },
 };
 
 const BRANCH_COLORS: Record<string, string> = Object.fromEntries(
