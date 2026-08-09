@@ -50,7 +50,19 @@ const skillCoinsEl = $('skill-coins');
 const canvas = $<HTMLCanvasElement>('board');
 const renderer = new BoardRenderer(canvas, BOARD_COLS, BOARD_ROWS);
 
+// 테스트용 URL 파라미터: ?reset=1 진행 초기화, ?coins=1000 코인 설정
+const testParams = new URLSearchParams(location.search);
+if (testParams.has('reset')) {
+  localStorage.clear();
+  location.replace(location.pathname);
+}
+
 const progress = loadProgress();
+const coinsOverride = Number(testParams.get('coins'));
+if (coinsOverride > 0) {
+  progress.coins = coinsOverride;
+  saveProgress(progress);
+}
 let game = new Game(computePerks(progress));
 let dragAnchor: CellPoint | null = null;
 let selection: SelectionView | null = null;
