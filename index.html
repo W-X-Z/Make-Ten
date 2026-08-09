@@ -12,8 +12,8 @@
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%235b8cff'/%3E%3Ctext x='32' y='44' font-size='34' font-weight='800' font-family='sans-serif' fill='white' text-anchor='middle'%3E10%3C/text%3E%3C/svg%3E"
     />
     <title>Make Ten</title>
-    <script type="module" crossorigin src="./assets/index-8PAf9qPh.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-DtdpJBSL.css">
+    <script type="module" crossorigin src="./assets/index-B-K1FKao.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-DfUNcg24.css">
   </head>
   <body>
     <div id="app">
@@ -26,8 +26,9 @@
           <div id="targets" title="제거 가능한 합"></div>
           <div id="time-box">
             <span class="hud-label">시간</span>
-            <span id="time">120</span>
+            <span id="time">30</span>
           </div>
+          <button id="quit-btn" class="icon-btn small" type="button" aria-label="게임 종료">✕</button>
         </div>
         <div id="time-bar-track"><div id="time-bar"></div></div>
       </header>
@@ -43,31 +44,33 @@
         </button>
       </footer>
 
-      <div id="start-overlay" class="overlay">
-        <div class="overlay-card">
+      <div id="home-screen" class="screen">
+        <div class="home-content">
           <h1 class="logo">Make <em>Ten</em></h1>
           <p class="rules">
-            드래그로 네모 영역을 그려<br />
-            숫자 합이 <strong>10</strong>이면 제거!<br />
-            제한 시간 120초 · 리롤 1회
+            네모를 드래그!<br />
+            합이 <strong>10</strong>이면 제거!<br />
+            30초 타임어택!
           </p>
-          <p class="rules sub">지운 자리는 빈칸으로 남아요.<br />조합이 마르면 리롤로 새 숫자를 받으세요.</p>
           <div id="best-box-start" class="best-box"></div>
           <div id="coins-start" class="coin-chip">🪙 0</div>
-          <button id="start-btn" class="primary-btn" type="button">게임 시작</button>
-          <button id="skill-open-start" class="secondary-btn" type="button">스킬트리</button>
+          <div class="home-cta">
+            <button id="start-btn" class="primary-btn" type="button">게임 시작</button>
+            <button id="skill-open-start" class="secondary-btn" type="button">스킬트리</button>
+          </div>
         </div>
       </div>
 
       <div id="result-overlay" class="overlay hidden">
         <div class="overlay-card">
-          <h2 class="result-title">시간 종료!</h2>
+          <h2 class="result-title">게임 종료!</h2>
           <div class="result-score-label">획득 점수</div>
           <div id="result-score" class="result-score">0</div>
           <div id="result-coins" class="coin-earn"></div>
           <div id="result-best" class="best-box"></div>
           <button id="retry-btn" class="primary-btn" type="button">다시하기</button>
           <button id="skill-open-result" class="secondary-btn" type="button">스킬트리</button>
+          <button id="home-btn" class="text-btn" type="button">홈으로</button>
         </div>
       </div>
 
