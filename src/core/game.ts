@@ -24,7 +24,7 @@ export interface GameConfig {
 export const DEFAULT_CONFIG: GameConfig = {
   cols: 7,
   rows: 10,
-  durationMs: 120_000,
+  durationMs: 30_000,
 };
 
 /** 스킬트리 해금이 게임 한 판에 적용되는 효과 묶음 */
@@ -109,6 +109,14 @@ export class Game {
 
   start(): void {
     if (this.phase === 'ready') this.phase = 'playing';
+  }
+
+  /** 종료 버튼: 즉시 결과 화면으로 (획득 점수는 유지) */
+  end(): void {
+    if (this.phase === 'playing') {
+      this.timeLeftMs = 0;
+      this.phase = 'result';
+    }
   }
 
   /** 매 프레임 호출. 시간이 다 되면 result로 전이한다. */

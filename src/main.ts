@@ -35,7 +35,7 @@ noComboEl.id = 'no-combo-hint';
 noComboEl.className = 'hidden';
 $('board-wrap').appendChild(noComboEl);
 
-const startOverlay = $('start-overlay');
+const homeScreen = $('home-screen');
 const resultOverlay = $('result-overlay');
 const skillOverlay = $('skill-overlay');
 const startBtn = $<HTMLButtonElement>('start-btn');
@@ -190,7 +190,7 @@ function startNewGame(): void {
   selection = null;
   resultShown = false;
   invalidateHint();
-  startOverlay.classList.add('hidden');
+  homeScreen.classList.add('hidden');
   resultOverlay.classList.add('hidden');
   skillOverlay.classList.add('hidden');
   game.start();
@@ -200,6 +200,15 @@ function startNewGame(): void {
 
 startBtn.addEventListener('click', startNewGame);
 retryBtn.addEventListener('click', startNewGame);
+
+$('quit-btn').addEventListener('click', () => game.end());
+
+$('home-btn').addEventListener('click', () => {
+  resultOverlay.classList.add('hidden');
+  homeScreen.classList.remove('hidden');
+  updateCoinDisplays();
+  updateBestDisplays();
+});
 
 rerollBtn.addEventListener('click', () => {
   if (game.reroll()) {
@@ -213,7 +222,7 @@ rerollBtn.addEventListener('click', () => {
 
 // ---------- 스킬트리 오버레이 ----------
 
-let skillReturnTo: HTMLElement = startOverlay;
+let skillReturnTo: HTMLElement = homeScreen;
 
 function onBuySkill(def: SkillDef): void {
   if (buySkill(progress, def)) {
@@ -235,7 +244,7 @@ function openSkillTree(returnTo: HTMLElement): void {
   updateCoinDisplays();
 }
 
-$('skill-open-start').addEventListener('click', () => openSkillTree(startOverlay));
+$('skill-open-start').addEventListener('click', () => openSkillTree(homeScreen));
 $('skill-open-result').addEventListener('click', () => openSkillTree(resultOverlay));
 $('skill-close-btn').addEventListener('click', () => {
   skillOverlay.classList.add('hidden');

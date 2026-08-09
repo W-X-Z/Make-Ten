@@ -159,6 +159,68 @@ body {
   }
 }
 
+/* ---------- 홈 씬 ---------- */
+
+.screen {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(circle at 50% 30%, rgba(91, 140, 255, 0.1), transparent 55%),
+    #141824;
+}
+
+.screen.hidden {
+  display: none;
+}
+
+.home-content {
+  text-align: center;
+  width: min(86%, 320px);
+}
+
+.home-content .logo {
+  font-size: 52px;
+  margin-bottom: 26px;
+}
+
+.home-content .rules {
+  font-size: 18px;
+  line-height: 1.9;
+  margin-bottom: 24px;
+}
+
+.home-cta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.icon-btn.small {
+  width: 30px;
+  height: 30px;
+  font-size: 13px;
+  border-radius: 8px;
+  margin-left: 10px;
+  flex-shrink: 0;
+}
+
+.text-btn {
+  border: none;
+  background: none;
+  margin-top: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #8a93ad;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 /* ---------- 오버레이 ---------- */
 
 .overlay {
