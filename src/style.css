@@ -75,6 +75,12 @@ body {
   background: #ff5d5d;
 }
 
+/* 골든 타임(17) 버프 중 */
+#time-bar.golden {
+  background: #ffd75e;
+  box-shadow: 0 0 8px rgba(255, 215, 94, 0.8);
+}
+
 /* ---------- 보드 ---------- */
 
 #board-wrap {

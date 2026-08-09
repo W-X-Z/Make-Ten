@@ -32,9 +32,9 @@ const LAYOUT: Record<string, LayoutEntry> = {
   first_strike: { icon: '⚡', x: -4.0, y: -0.7 },
   // 조합 — 위
   lucky_13: { icon: '🍀', x: 0.1, y: -1.4 },
-  seven_alchemy: { icon: '⚗️', x: 1.2, y: -1.1 },
+  seven_alchemy: { icon: '🌟', x: 1.2, y: -1.1 },
   cross_amp: { icon: '💥', x: 1.1, y: -2.4 },
-  mystery_15: { icon: '🎁', x: -0.9, y: -2.3 },
+  mystery_15: { icon: '🧹', x: -0.9, y: -2.3 },
   double_20: { icon: '💎', x: 0.2, y: -3.1 },
   crown_20: { icon: '👑', x: 0.3, y: -4.3 },
   // 시간 — 오른쪽

@@ -19,8 +19,8 @@ const TARGET_COLORS: Record<number, string> = {
 /** 목표 선택 화면에 노출되는 특수 숫자 정의 */
 const TARGET_OPTIONS: { sum: number; desc: string; skill: string | null }[] = [
   { sum: 13, desc: '십자 폭발! 인접 타일 제거', skill: 'lucky_13' },
-  { sum: 15, desc: '랜덤 보상! 3배/시간/폭발', skill: 'mystery_15' },
-  { sum: 17, desc: '보드의 7이 모두 1로!', skill: null },
+  { sum: 15, desc: '가로줄 전체 제거!', skill: 'mystery_15' },
+  { sum: 17, desc: '골든 타임! 7초간 점수 2배', skill: null },
   { sum: 20, desc: '해당 조합 점수 3배!', skill: 'double_20' },
 ];
 
@@ -142,17 +142,17 @@ attachPointerInput(canvas, {
             color: '#eef1f8',
           });
         }
-        if (result.convertedSevens > 0) {
-          flashBoard(`7 → 1 변환 ×${result.convertedSevens}`);
+        if (result.lineCleared > 0) {
+          flashBoard(`🧹 라인 클리어 ×${result.lineCleared}`);
         }
-        if (result.mystery === 'triple') flashBoard('🎁 점수 3배!');
-        if (result.mystery === 'time') flashBoard('🎁 +5초!');
-        if (result.mystery === 'boom') flashBoard('🎁 폭발!');
+        if (result.goldenStarted) {
+          flashBoard('🌟 골든 타임! 점수 2배');
+        }
         if (result.boardReset) {
           flashBoard('조합 소진 — 보드 초기화!');
         }
         audio.sfxClear(result.sum);
-        navigator.vibrate?.(result.extraTiles.length > 0 || result.convertedSevens > 0 ? 60 : 30);
+        navigator.vibrate?.(result.extraTiles.length > 0 || result.goldenStarted ? 60 : 30);
         invalidateHint();
         updateHud();
       }
@@ -425,7 +425,7 @@ function frame(ts: number): void {
   requestAnimationFrame(frame);
 }
 
-/** 매 프레임 전체 HUD를 갱신할 필요는 없어 시간 표시만 갱신 */
+/** 매 프레임 전체 HUD를 갱신할 필요는 없어 시간 표시·버프 표시만 갱신 */
 function updateHudTime(): void {
   const seconds = Math.ceil(game.timeLeftMs / 1000);
   if (timeEl.textContent !== String(seconds)) {
@@ -433,6 +433,7 @@ function updateHudTime(): void {
     timeBarEl.classList.toggle('warning', seconds <= 10);
   }
   timeBarEl.style.width = `${Math.min(100, (game.timeLeftMs / game.durationMs) * 100)}%`;
+  timeBarEl.classList.toggle('golden', game.goldenActive());
 }
 
 requestAnimationFrame(frame);

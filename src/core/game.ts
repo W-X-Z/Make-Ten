@@ -56,8 +56,8 @@ export interface Perks {
   hintDelayMs: number;
   /** 십자 폭발 타일당 점수 (기본 3, 증폭 시 7) */
   crossPoints: number;
-  /** 17 변환된 7 하나당 점수 (7의 연금술) */
-  sevenPoints: number;
+  /** 골든 타임(17) 지속에 더해지는 시간 (골든 연장) */
+  goldenExtendMs: number;
   /** 합 20 점수 배율 (기본 3, 킹 20 시 5) */
   twentyMult: number;
   /** 보드 생성 시 작은 숫자 편향 (숫자 감각) */
@@ -85,7 +85,7 @@ export const BASE_PERKS: Perks = {
   hint: false,
   hintDelayMs: 5_000,
   crossPoints: 3,
-  sevenPoints: 0,
+  goldenExtendMs: 0,
   twentyMult: 3,
   lowBias: false,
   coinBonus: 1,
@@ -99,25 +99,27 @@ const WARMUP_WINDOW_MS = 5_000;
 const WARMUP_FACTOR = 0.5;
 /** 합 10 제거 시 기본 시간 보너스 */
 const TIME_PER_TEN_MS = 1_000;
-const MYSTERY_TIME_MS = 5_000;
+/** 골든 타임(17) 기본 지속 시간과 배율 */
+const GOLDEN_WINDOW_MS = 7_000;
+const GOLDEN_MULT = 2;
+/** 라인 클리어(15) 추가 제거 타일당 점수 */
+const LINE_POINTS = 2;
 const BIG_HUNTER_MIN_TILES = 5;
 
 export type Phase = 'ready' | 'playing' | 'result';
-
-export type MysteryReward = 'triple' | 'time' | 'boom' | null;
 
 export interface ClearAttempt {
   cleared: boolean;
   sum: number;
   tiles: number[];
-  /** 십자 폭발(13 또는 미스터리 boom)로 추가 제거된 타일 */
+  /** 특수 효과(13 십자 폭발, 15 라인 클리어)로 추가 제거된 타일 */
   extraTiles: number[];
   points: number;
   timeBonusMs: number;
-  /** 17 효과로 1이 된 7의 개수 */
-  convertedSevens: number;
-  /** 미스터리 15의 랜덤 보상 */
-  mystery: MysteryReward;
+  /** 15 라인 클리어로 제거된 타일 수 (extraTiles와 동일 길이) */
+  lineCleared: number;
+  /** 17 골든 타임이 이번 제거로 발동됐는가 */
+  goldenStarted: boolean;
   /** 이번 제거로 조합이 고갈되어 보드가 자동 초기화됐는가 */
   boardReset: boolean;
 }
@@ -129,8 +131,8 @@ const MISS: ClearAttempt = {
   extraTiles: [],
   points: 0,
   timeBonusMs: 0,
-  convertedSevens: 0,
-  mystery: null,
+  lineCleared: 0,
+  goldenStarted: false,
   boardReset: false,
 };
 
@@ -151,6 +153,8 @@ export class Game {
   private elapsedMs = 0;
   /** 리셋 러시가 유지되는 timeLeftMs 하한 (이 값보다 클 때 활성) */
   private resetRushFloor = Infinity;
+  /** 골든 타임이 유지되는 elapsedMs 상한 (이 값보다 작을 때 활성) */
+  private goldenCeiling = -Infinity;
   private rng: Rng;
 
   constructor(perks: Perks = BASE_PERKS, config: GameConfig = DEFAULT_CONFIG, rng: Rng = Math.random) {
@@ -189,17 +193,23 @@ export class Game {
     }
   }
 
-  /** 현재 시점의 점수 배율 (스킬 효과 합성) */
+  /** 현재 시점의 점수 배율 (스킬·버프 효과 합성) */
   currentMultiplier(): number {
     let mult = this.perks.scoreMultiplier;
     if (this.perks.startDash && this.elapsedMs <= START_DASH_WINDOW_MS) mult *= 1.5;
     if (this.perks.lastSpurt && this.timeLeftMs <= LAST_SPURT_WINDOW_MS) mult *= 1.5;
     if (this.resetRushActive()) mult *= 1.3;
+    if (this.goldenActive()) mult *= GOLDEN_MULT;
     return mult;
   }
 
   resetRushActive(): boolean {
     return this.perks.resetRush && this.timeLeftMs > this.resetRushFloor;
+  }
+
+  /** 골든 타임(17) 버프 활성 여부 */
+  goldenActive(): boolean {
+    return this.elapsedMs < this.goldenCeiling;
   }
 
   /** 드래그를 놓았을 때의 판정. 합이 목표 합이면 제거하고 점수를 더한다. */
@@ -213,29 +223,23 @@ export class Game {
     }
 
     // 특수 효과 준비
-    let mystery: MysteryReward = null;
     let extraTiles: number[] = [];
     if (sum === 13) {
+      // 럭키 13: 십자 폭발
       extraTiles = crossNeighborTiles(this.board, rect);
     } else if (sum === 15) {
-      const roll = this.rng();
-      mystery = roll < 1 / 3 ? 'triple' : roll < 2 / 3 ? 'time' : 'boom';
-      if (mystery === 'boom') extraTiles = crossNeighborTiles(this.board, rect);
+      // 라인 15: 선택 영역이 걸친 가로줄 전체 제거
+      extraTiles = this.rowTiles(rect).filter((i) => !tiles.includes(i));
     }
 
     clearTiles(this.board, tiles);
     clearTiles(this.board, extraTiles);
 
-    // 17: 보드의 모든 7이 1로 변환 (새 조합 재료 생성)
-    let convertedSevens = 0;
+    // 골든 타임(17): 일정 시간 점수 2배 버프. 점수 계산 전에 발동해 이번 제거부터 적용.
+    let goldenStarted = false;
     if (sum === 17) {
-      this.board.cells = this.board.cells.map((v) => {
-        if (v === 7) {
-          convertedSevens++;
-          return 1;
-        }
-        return v;
-      });
+      this.goldenCeiling = this.elapsedMs + GOLDEN_WINDOW_MS + this.perks.goldenExtendMs;
+      goldenStarted = true;
     }
 
     let base = scoreForClear(tiles.length, this.perks.tileBonus);
@@ -243,10 +247,8 @@ export class Game {
     if (this.perks.bigHunter && tiles.length >= BIG_HUNTER_MIN_TILES) {
       base *= this.perks.bigHunterMult;
     }
-    base += extraTiles.length * this.perks.crossPoints;
-    base += convertedSevens * this.perks.sevenPoints;
+    base += extraTiles.length * (sum === 15 ? LINE_POINTS : this.perks.crossPoints);
     if (sum === 20) base *= this.perks.twentyMult;
-    if (mystery === 'triple') base *= 3;
     const points = Math.round(base * this.currentMultiplier());
     this.score += points;
 
@@ -257,7 +259,6 @@ export class Game {
     } else {
       timeBonusMs = this.perks.specialTimeMs;
     }
-    if (mystery === 'time') timeBonusMs += MYSTERY_TIME_MS;
     this.timeLeftMs += timeBonusMs;
 
     // 조합 고갈 → 보드 전체 자동 초기화
@@ -275,10 +276,22 @@ export class Game {
       extraTiles,
       points,
       timeBonusMs,
-      convertedSevens,
-      mystery,
+      lineCleared: sum === 15 ? extraTiles.length : 0,
+      goldenStarted,
       boardReset,
     };
+  }
+
+  /** 사각형이 걸친 모든 행의 숫자 타일 인덱스 */
+  private rowTiles(rect: Rect): number[] {
+    const out: number[] = [];
+    for (let r = rect.r0; r <= rect.r1; r++) {
+      for (let c = 0; c < this.board.cols; c++) {
+        const i = r * this.board.cols + c;
+        if (this.board.cells[i] !== null) out.push(i);
+      }
+    }
+    return out;
   }
 
   canReset(): boolean {
