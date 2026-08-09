@@ -19,7 +19,7 @@ const TARGET_COLORS: Record<number, string> = {
 /** 목표 선택 화면에 노출되는 특수 숫자 정의 */
 const TARGET_OPTIONS: { sum: number; desc: string; skill: string | null }[] = [
   { sum: 13, desc: '십자 폭발! 인접 타일 제거', skill: 'lucky_13' },
-  { sum: 15, desc: '가로줄 전체 제거!', skill: 'mystery_15' },
+  { sum: 15, desc: '가로줄 한 줄 제거!', skill: 'mystery_15' },
   { sum: 17, desc: '골든 타임! 7초간 점수 2배', skill: null },
   { sum: 20, desc: '해당 조합 점수 3배!', skill: 'double_20' },
 ];

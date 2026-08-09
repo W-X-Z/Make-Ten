@@ -105,7 +105,7 @@ export const SKILLS: SkillDef[] = [
     id: 'mystery_15',
     branch: 'combination',
     name: '라인 15',
-    desc: '목표 15 해금! 선택 영역이 걸친 가로줄 전체 제거 (+2점/타일)',
+    desc: '목표 15 해금! 가로줄 한 줄 제거 (+1점/타일)',
     maxLevel: 1,
     costs: [200],
     requires: { id: 'lucky_13', level: 1 },

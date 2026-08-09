@@ -103,7 +103,7 @@ const TIME_PER_TEN_MS = 1_000;
 const GOLDEN_WINDOW_MS = 7_000;
 const GOLDEN_MULT = 2;
 /** 라인 클리어(15) 추가 제거 타일당 점수 */
-const LINE_POINTS = 2;
+const LINE_POINTS = 1;
 const BIG_HUNTER_MIN_TILES = 5;
 
 export type Phase = 'ready' | 'playing' | 'result';
@@ -228,7 +228,7 @@ export class Game {
       // 럭키 13: 십자 폭발
       extraTiles = crossNeighborTiles(this.board, rect);
     } else if (sum === 15) {
-      // 라인 15: 선택 영역이 걸친 가로줄 전체 제거
+      // 라인 15: 선택 영역의 가운데 행 한 줄만 제거
       extraTiles = this.rowTiles(rect).filter((i) => !tiles.includes(i));
     }
 
@@ -282,14 +282,13 @@ export class Game {
     };
   }
 
-  /** 사각형이 걸친 모든 행의 숫자 타일 인덱스 */
+  /** 사각형의 가운데 행 한 줄의 숫자 타일 인덱스 (라인 15) */
   private rowTiles(rect: Rect): number[] {
+    const r = Math.floor((rect.r0 + rect.r1) / 2);
     const out: number[] = [];
-    for (let r = rect.r0; r <= rect.r1; r++) {
-      for (let c = 0; c < this.board.cols; c++) {
-        const i = r * this.board.cols + c;
-        if (this.board.cells[i] !== null) out.push(i);
-      }
+    for (let c = 0; c < this.board.cols; c++) {
+      const i = r * this.board.cols + c;
+      if (this.board.cells[i] !== null) out.push(i);
     }
     return out;
   }
