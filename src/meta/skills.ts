@@ -36,7 +36,7 @@ export const SKILLS: SkillDef[] = [
     name: '점수 강화',
     desc: '모든 획득 점수 +10% / 레벨',
     maxLevel: 5,
-    costs: [30, 80, 180, 400, 900],
+    costs: [20, 50, 110, 240, 500],
   },
   {
     id: 'big_hunter',
@@ -44,7 +44,7 @@ export const SKILLS: SkillDef[] = [
     name: '대물 사냥꾼',
     desc: '5타일 이상 조합의 점수 2배',
     maxLevel: 1,
-    costs: [300],
+    costs: [150],
     requires: { id: 'score_boost', level: 2 },
   },
   // ── 조합 계열 ──
@@ -54,7 +54,7 @@ export const SKILLS: SkillDef[] = [
     name: '럭키 13',
     desc: '합 13도 제거 가능! 십자 폭발로 인접 타일까지 제거 (+3점/타일)',
     maxLevel: 1,
-    costs: [200],
+    costs: [80],
   },
   {
     id: 'time_17',
@@ -62,7 +62,7 @@ export const SKILLS: SkillDef[] = [
     name: '타임 17',
     desc: '합 17도 제거 가능! 성공 시 시간 +3초',
     maxLevel: 1,
-    costs: [350],
+    costs: [150],
     requires: { id: 'lucky_13', level: 1 },
   },
   {
@@ -71,7 +71,7 @@ export const SKILLS: SkillDef[] = [
     name: '더블 20',
     desc: '합 20도 제거 가능! 해당 조합 점수 3배',
     maxLevel: 1,
-    costs: [500],
+    costs: [250],
     requires: { id: 'time_17', level: 1 },
   },
   // ── 시간 계열 ──
@@ -81,7 +81,7 @@ export const SKILLS: SkillDef[] = [
     name: '시간 연장',
     desc: '시작 시간 +5초 / 레벨',
     maxLevel: 4,
-    costs: [50, 120, 300, 700],
+    costs: [25, 60, 140, 320],
   },
   {
     id: 'hourglass',
@@ -89,7 +89,7 @@ export const SKILLS: SkillDef[] = [
     name: '모래시계',
     desc: '제거 성공 시마다 시간 +0.3초',
     maxLevel: 1,
-    costs: [400],
+    costs: [180],
     requires: { id: 'time_extend', level: 1 },
   },
   {
@@ -98,7 +98,7 @@ export const SKILLS: SkillDef[] = [
     name: '라스트 스퍼트',
     desc: '마지막 15초 동안 점수 1.5배',
     maxLevel: 1,
-    costs: [600],
+    costs: [280],
     requires: { id: 'time_extend', level: 2 },
   },
   // ── 유틸 계열 ──
@@ -108,7 +108,7 @@ export const SKILLS: SkillDef[] = [
     name: '리롤 충전',
     desc: '판당 리롤 횟수 +1 / 레벨',
     maxLevel: 2,
-    costs: [600, 1600],
+    costs: [250, 700],
   },
   {
     id: 'reroll_rush',
@@ -116,7 +116,7 @@ export const SKILLS: SkillDef[] = [
     name: '리롤 러시',
     desc: '리롤 직후 10초 동안 점수 1.3배',
     maxLevel: 1,
-    costs: [350],
+    costs: [160],
     requires: { id: 'reroll_charge', level: 1 },
   },
   {
@@ -125,7 +125,7 @@ export const SKILLS: SkillDef[] = [
     name: '힌트',
     desc: '5초간 입력이 없으면 가능한 조합 하나를 알려줌',
     maxLevel: 1,
-    costs: [250],
+    costs: [100],
   },
 ];
 

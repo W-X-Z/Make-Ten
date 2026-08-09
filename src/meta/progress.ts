@@ -8,9 +8,9 @@ export interface Progress {
 const KEY = 'make-ten:progress';
 const LEGACY_BEST_KEY = 'make-ten:best';
 
-/** 점수 → 코인 환산 비율 (10점 = 1코인) */
+/** 점수 → 코인 환산 비율 (5점 = 1코인) */
 export function coinsForScore(score: number): number {
-  return Math.floor(score / 10);
+  return Math.floor(score / 5);
 }
 
 export function loadProgress(): Progress {
