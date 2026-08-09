@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#141824" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%235b8cff'/%3E%3Ctext x='32' y='44' font-size='34' font-weight='800' font-family='sans-serif' fill='white' text-anchor='middle'%3E10%3C/text%3E%3C/svg%3E"
+    />
+    <title>Make Ten</title>
+    <script type="module" crossorigin src="./assets/index-8PAf9qPh.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-DtdpJBSL.css">
+  </head>
+  <body>
+    <div id="app">
+      <header id="hud">
+        <div id="hud-top">
+          <div id="score-box">
+            <span class="hud-label">점수</span>
+            <span id="score">0</span>
+          </div>
+          <div id="targets" title="제거 가능한 합"></div>
+          <div id="time-box">
+            <span class="hud-label">시간</span>
+            <span id="time">120</span>
+          </div>
+        </div>
+        <div id="time-bar-track"><div id="time-bar"></div></div>
+      </header>
+
+      <main id="board-wrap">
+        <canvas id="board"></canvas>
+      </main>
+
+      <footer id="controls">
+        <button id="reroll-btn" type="button">
+          <span class="btn-title">리롤</span>
+          <span id="reroll-count" class="btn-badge">×1</span>
+        </button>
+      </footer>
+
+      <div id="start-overlay" class="overlay">
+        <div class="overlay-card">
+          <h1 class="logo">Make <em>Ten</em></h1>
+          <p class="rules">
+            드래그로 네모 영역을 그려<br />
+            숫자 합이 <strong>10</strong>이면 제거!<br />
+            제한 시간 120초 · 리롤 1회
+          </p>
+          <p class="rules sub">지운 자리는 빈칸으로 남아요.<br />조합이 마르면 리롤로 새 숫자를 받으세요.</p>
+          <div id="best-box-start" class="best-box"></div>
+          <div id="coins-start" class="coin-chip">🪙 0</div>
+          <button id="start-btn" class="primary-btn" type="button">게임 시작</button>
+          <button id="skill-open-start" class="secondary-btn" type="button">스킬트리</button>
+        </div>
+      </div>
+
+      <div id="result-overlay" class="overlay hidden">
+        <div class="overlay-card">
+          <h2 class="result-title">시간 종료!</h2>
+          <div class="result-score-label">획득 점수</div>
+          <div id="result-score" class="result-score">0</div>
+          <div id="result-coins" class="coin-earn"></div>
+          <div id="result-best" class="best-box"></div>
+          <button id="retry-btn" class="primary-btn" type="button">다시하기</button>
+          <button id="skill-open-result" class="secondary-btn" type="button">스킬트리</button>
+        </div>
+      </div>
+
+      <div id="skill-overlay" class="overlay hidden">
+        <div class="skill-screen">
+          <div class="skill-head">
+            <h2>스킬트리</h2>
+            <div id="skill-coins" class="coin-chip">🪙 0</div>
+            <button id="skill-close-btn" class="icon-btn" type="button" aria-label="닫기">✕</button>
+          </div>
+          <div id="skill-viewport">
+            <div id="skill-world"></div>
+            <div id="skill-detail" class="hidden">
+              <div class="detail-info">
+                <div id="detail-name" class="skill-name"></div>
+                <div id="detail-desc" class="skill-desc"></div>
+                <div id="detail-req" class="skill-req hidden"></div>
+              </div>
+              <button id="detail-buy" class="skill-buy-btn" type="button"></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
