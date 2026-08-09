@@ -47,32 +47,23 @@ export const SKILLS: SkillDef[] = [
     costs: [150],
     requires: { id: 'score_boost', level: 2 },
   },
-  // ── 조합 계열 ──
+  // ── 조합 계열 (목표 선택 화면에서 고를 수 있는 숫자를 해금) ──
   {
     id: 'lucky_13',
     branch: 'combination',
     name: '럭키 13',
-    desc: '합 13도 제거 가능! 십자 폭발로 인접 타일까지 제거 (+3점/타일)',
+    desc: '목표 13 해금! 십자 폭발로 인접 타일까지 제거 (+3점/타일)',
     maxLevel: 1,
     costs: [80],
-  },
-  {
-    id: 'time_17',
-    branch: 'combination',
-    name: '타임 17',
-    desc: '합 17도 제거 가능! 성공 시 시간 +3초',
-    maxLevel: 1,
-    costs: [150],
-    requires: { id: 'lucky_13', level: 1 },
   },
   {
     id: 'double_20',
     branch: 'combination',
     name: '더블 20',
-    desc: '합 20도 제거 가능! 해당 조합 점수 3배',
+    desc: '목표 20 해금! 해당 조합 점수 3배',
     maxLevel: 1,
     costs: [250],
-    requires: { id: 'time_17', level: 1 },
+    requires: { id: 'lucky_13', level: 1 },
   },
   // ── 시간 계열 ──
   {
@@ -87,7 +78,7 @@ export const SKILLS: SkillDef[] = [
     id: 'hourglass',
     branch: 'time',
     name: '모래시계',
-    desc: '제거 성공 시마다 시간 +0.3초',
+    desc: '합 10 제거 시간 보너스 +0.3초 (기본 +1초에 추가)',
     maxLevel: 1,
     costs: [180],
     requires: { id: 'time_extend', level: 1 },
@@ -105,16 +96,16 @@ export const SKILLS: SkillDef[] = [
   {
     id: 'reroll_charge',
     branch: 'util',
-    name: '리롤 충전',
-    desc: '판당 리롤 횟수 +1 / 레벨',
+    name: '초기화 충전',
+    desc: '판당 보드 초기화 횟수 +1 / 레벨',
     maxLevel: 2,
     costs: [250, 700],
   },
   {
     id: 'reroll_rush',
     branch: 'util',
-    name: '리롤 러시',
-    desc: '리롤 직후 10초 동안 점수 1.3배',
+    name: '초기화 러시',
+    desc: '초기화 직후 10초 동안 점수 1.3배',
     maxLevel: 1,
     costs: [160],
     requires: { id: 'reroll_charge', level: 1 },
@@ -152,13 +143,18 @@ export function buySkill(progress: Progress, def: SkillDef): boolean {
   return true;
 }
 
-/** 스킬 레벨 → 게임에 적용되는 효과 묶음 */
+/** 해금 상태 기준으로 목표 선택 화면에서 고를 수 있는 특수 숫자 풀 (17은 기본 제공) */
+export function unlockedTargets(progress: Progress): number[] {
+  const pool: number[] = [];
+  if (skillLevel(progress, 'lucky_13') > 0) pool.push(13);
+  pool.push(17);
+  if (skillLevel(progress, 'double_20') > 0) pool.push(20);
+  return pool;
+}
+
+/** 스킬 레벨 → 게임에 적용되는 효과 묶음 (specialTargets는 호출 측에서 선택값으로 채움) */
 export function computePerks(progress: Progress): Perks {
   const lv = (id: string) => skillLevel(progress, id);
-  const specialTargets: number[] = [];
-  if (lv('lucky_13') > 0) specialTargets.push(13);
-  if (lv('time_17') > 0) specialTargets.push(17);
-  if (lv('double_20') > 0) specialTargets.push(20);
   return {
     ...BASE_PERKS,
     scoreMultiplier: 1 + 0.1 * lv('score_boost'),
@@ -166,9 +162,9 @@ export function computePerks(progress: Progress): Perks {
     extraTimeMs: 5_000 * lv('time_extend'),
     timePerClearMs: lv('hourglass') > 0 ? 300 : 0,
     lastSpurt: lv('last_spurt') > 0,
-    rerolls: 1 + lv('reroll_charge'),
-    rerollRush: lv('reroll_rush') > 0,
+    resets: 1 + lv('reroll_charge'),
+    resetRush: lv('reroll_rush') > 0,
     hint: lv('hint') > 0,
-    specialTargets,
+    specialTargets: unlockedTargets(progress),
   };
 }

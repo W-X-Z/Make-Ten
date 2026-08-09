@@ -91,12 +91,12 @@ body {
   touch-action: none;
 }
 
-#no-combo-hint {
+#board-flash {
   position: absolute;
   left: 50%;
   bottom: 16px;
   transform: translateX(-50%);
-  background: rgba(255, 93, 93, 0.92);
+  background: rgba(91, 140, 255, 0.92);
   color: #fff;
   font-size: 14px;
   font-weight: 700;
@@ -114,7 +114,7 @@ body {
   padding: 10px 16px 18px;
 }
 
-#reroll-btn {
+#reset-btn {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -129,16 +129,16 @@ body {
   transition: opacity 0.2s, transform 0.1s;
 }
 
-#reroll-btn:active {
+#reset-btn:active {
   transform: scale(0.96);
 }
 
-#reroll-btn:disabled {
+#reset-btn:disabled {
   opacity: 0.35;
   cursor: default;
 }
 
-#reroll-btn.pulse {
+#reset-btn.pulse {
   animation: pulse 0.9s ease-in-out infinite;
 }
 
@@ -198,6 +198,74 @@ body {
   flex-direction: column;
   gap: 4px;
   margin-top: 8px;
+}
+
+.select-title {
+  font-size: 30px;
+  font-weight: 900;
+  margin-bottom: 12px;
+}
+
+#target-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 22px;
+  text-align: left;
+}
+
+.target-option {
+  --chip-color: #37d67a;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid transparent;
+  border-radius: 14px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-family: inherit;
+  color: inherit;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.target-option.selected {
+  border-color: var(--chip-color);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.target-option.fixed {
+  cursor: default;
+}
+
+.target-option.locked {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.opt-num {
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--chip-color);
+  border: 2px solid var(--chip-color);
+  border-radius: 12px;
+}
+
+.target-option.locked .opt-num {
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.opt-desc {
+  font-size: 14px;
+  font-weight: 700;
+  color: #c3cadd;
+  line-height: 1.4;
 }
 
 .icon-btn.small {

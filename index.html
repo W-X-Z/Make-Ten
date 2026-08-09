@@ -37,9 +37,9 @@
       </main>
 
       <footer id="controls">
-        <button id="reroll-btn" type="button">
-          <span class="btn-title">리롤</span>
-          <span id="reroll-count" class="btn-badge">×1</span>
+        <button id="reset-btn" type="button">
+          <span class="btn-title">초기화</span>
+          <span id="reset-count" class="btn-badge">×1</span>
         </button>
       </footer>
 
@@ -56,6 +56,18 @@
           <div class="home-cta">
             <button id="start-btn" class="primary-btn" type="button">게임 시작</button>
             <button id="skill-open-start" class="secondary-btn" type="button">스킬트리</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="select-screen" class="screen hidden">
+        <div class="home-content">
+          <h2 class="select-title">목표 선택</h2>
+          <p class="rules sub">10 말고 뭘 노릴까?<br />최대 3개!</p>
+          <div id="target-options"></div>
+          <div class="home-cta">
+            <button id="play-btn" class="primary-btn" type="button">시작</button>
+            <button id="back-btn" class="secondary-btn" type="button">뒤로</button>
           </div>
         </div>
       </div>

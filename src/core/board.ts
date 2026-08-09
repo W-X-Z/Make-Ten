@@ -48,20 +48,6 @@ export function createBoard(cols: number, rows: number, rng: Rng = Math.random):
   return board;
 }
 
-/** 남아있는 타일만 새 숫자로 교체 (빈칸 유지). 가능하면 조합이 존재하는 배치를 고른다. */
-export function rerollBoard(
-  board: Board,
-  targets: readonly number[] = [TARGET_SUM],
-  rng: Rng = Math.random,
-): void {
-  let cells: Cell[] = board.cells;
-  for (let attempt = 0; attempt < MAX_GEN_ATTEMPTS; attempt++) {
-    cells = board.cells.map((c) => (c === null ? null : randomDigit(rng)));
-    if (hasAnyCombo({ ...board, cells }, targets)) break;
-  }
-  board.cells = cells;
-}
-
 /** 사각형 영역 안의 숫자 타일 인덱스 목록 (빈칸 제외) */
 export function tilesInRect(board: Board, rect: Rect): number[] {
   const tiles: number[] = [];

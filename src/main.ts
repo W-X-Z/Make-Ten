@@ -1,7 +1,7 @@
 import { TARGET_SUM, normalizeRect, sumTiles, tilesInRect } from './core/board';
 import { Game } from './core/game';
 import { coinsForScore, loadProgress, saveProgress } from './meta/progress';
-import { SkillDef, buySkill, computePerks } from './meta/skills';
+import { SkillDef, buySkill, computePerks, skillLevel, unlockedTargets } from './meta/skills';
 import { attachPointerInput, CellPoint } from './ui/input';
 import { BoardRenderer, FloatingText, HintView, SelectionView } from './ui/renderer';
 import { SkillTreeView } from './ui/skilltree';
@@ -14,6 +14,14 @@ const TARGET_COLORS: Record<number, string> = {
   20: '#ffb84d',
 };
 
+/** 목표 선택 화면에 노출되는 특수 숫자 정의 */
+const TARGET_OPTIONS: { sum: number; desc: string; skill: string | null }[] = [
+  { sum: 13, desc: '십자 폭발! 인접 타일 제거', skill: 'lucky_13' },
+  { sum: 17, desc: '보드의 7이 모두 1로!', skill: null },
+  { sum: 20, desc: '해당 조합 점수 3배!', skill: 'double_20' },
+];
+
+const MAX_SPECIAL_TARGETS = 3;
 const HINT_IDLE_MS = 5_000;
 const BOARD_COLS = 7;
 const BOARD_ROWS = 10;
@@ -28,18 +36,18 @@ const scoreEl = $('score');
 const timeEl = $('time');
 const timeBarEl = $('time-bar');
 const targetsEl = $('targets');
-const rerollBtn = $<HTMLButtonElement>('reroll-btn');
-const rerollCountEl = $('reroll-count');
-const noComboEl = document.createElement('div');
-noComboEl.id = 'no-combo-hint';
-noComboEl.className = 'hidden';
-$('board-wrap').appendChild(noComboEl);
+const resetBtn = $<HTMLButtonElement>('reset-btn');
+const resetCountEl = $('reset-count');
+const boardFlashEl = document.createElement('div');
+boardFlashEl.id = 'board-flash';
+boardFlashEl.className = 'hidden';
+$('board-wrap').appendChild(boardFlashEl);
 
 const homeScreen = $('home-screen');
+const selectScreen = $('select-screen');
 const resultOverlay = $('result-overlay');
 const skillOverlay = $('skill-overlay');
-const startBtn = $<HTMLButtonElement>('start-btn');
-const retryBtn = $<HTMLButtonElement>('retry-btn');
+const targetOptionsEl = $('target-options');
 const resultScoreEl = $('result-score');
 const resultCoinsEl = $('result-coins');
 const resultBestEl = $('result-best');
@@ -63,11 +71,13 @@ if (coinsOverride > 0) {
   progress.coins = coinsOverride;
   saveProgress(progress);
 }
+
 let game = new Game(computePerks(progress));
 let dragAnchor: CellPoint | null = null;
 let selection: SelectionView | null = null;
 let floats: FloatingText[] = [];
 let resultShown = false;
+let flashTimer = 0;
 
 // 힌트 스킬 상태
 let idleMs = 0;
@@ -82,6 +92,13 @@ function invalidateHint(): void {
   hintRect = null;
   hintDirty = true;
   idleMs = 0;
+}
+
+function flashBoard(text: string): void {
+  boardFlashEl.textContent = text;
+  boardFlashEl.classList.remove('hidden');
+  window.clearTimeout(flashTimer);
+  flashTimer = window.setTimeout(() => boardFlashEl.classList.add('hidden'), 1300);
 }
 
 function updateSelection(current: CellPoint): void {
@@ -113,10 +130,22 @@ attachPointerInput(canvas, {
         const centerR = (selection.rect.r0 + selection.rect.r1) / 2;
         const color = TARGET_COLORS[result.sum];
         floats.push({ col: centerC, row: centerR, ageMs: 0, text: `+${result.points}`, color });
-        if (result.sum === 17) {
-          floats.push({ col: centerC, row: centerR + 1, ageMs: 0, text: '+3초', color });
+        if (result.timeBonusMs > 0) {
+          floats.push({
+            col: centerC,
+            row: centerR + 1,
+            ageMs: 0,
+            text: `+${(result.timeBonusMs / 1000).toFixed(result.timeBonusMs % 1000 ? 1 : 0)}초`,
+            color: '#eef1f8',
+          });
         }
-        navigator.vibrate?.(result.extraTiles.length > 0 ? 60 : 30);
+        if (result.convertedSevens > 0) {
+          flashBoard(`7 → 1 변환 ×${result.convertedSevens}`);
+        }
+        if (result.boardReset) {
+          flashBoard('조합 소진 — 보드 초기화!');
+        }
+        navigator.vibrate?.(result.extraTiles.length > 0 || result.convertedSevens > 0 ? 60 : 30);
         invalidateHint();
         updateHud();
       }
@@ -156,15 +185,11 @@ function updateHud(): void {
 
   const seconds = Math.ceil(game.timeLeftMs / 1000);
   timeEl.textContent = String(seconds);
-  timeBarEl.style.width = `${(game.timeLeftMs / game.durationMs) * 100}%`;
+  timeBarEl.style.width = `${Math.min(100, (game.timeLeftMs / game.durationMs) * 100)}%`;
   timeBarEl.classList.toggle('warning', game.phase === 'playing' && seconds <= 10);
 
-  rerollCountEl.textContent = `×${game.rerollsLeft}`;
-  rerollBtn.disabled = !game.canReroll();
-  const urgent = game.phase === 'playing' && !game.combosAvailable;
-  rerollBtn.classList.toggle('pulse', urgent && game.canReroll());
-  noComboEl.textContent = '만들 수 있는 조합이 없어요!';
-  noComboEl.classList.toggle('hidden', !urgent);
+  resetCountEl.textContent = `×${game.resetsLeft}`;
+  resetBtn.disabled = !game.canReset();
 }
 
 function showResult(): void {
@@ -183,14 +208,70 @@ function showResult(): void {
   resultOverlay.classList.remove('hidden');
 }
 
+// ---------- 목표 선택 화면 ----------
+
+function renderTargetOptions(): void {
+  targetOptionsEl.innerHTML = '';
+
+  // 10은 항상 포함 (고정 표시)
+  const fixed = document.createElement('div');
+  fixed.className = 'target-option fixed selected';
+  fixed.style.setProperty('--chip-color', TARGET_COLORS[TARGET_SUM]);
+  fixed.innerHTML = `<span class="opt-num">10</span><span class="opt-desc">기본 목표 · 제거 시 +1초</span>`;
+  targetOptionsEl.appendChild(fixed);
+
+  const pool = unlockedTargets(progress);
+  for (const opt of TARGET_OPTIONS) {
+    const unlocked = pool.includes(opt.sum);
+    const selected = unlocked && progress.targets.includes(opt.sum);
+
+    const el = document.createElement('button');
+    el.type = 'button';
+    el.className = 'target-option';
+    el.dataset.sum = String(opt.sum);
+    el.style.setProperty('--chip-color', TARGET_COLORS[opt.sum]);
+    el.classList.toggle('selected', selected);
+    el.classList.toggle('locked', !unlocked);
+
+    const desc = unlocked ? opt.desc : '스킬트리에서 해금';
+    el.innerHTML = `<span class="opt-num">${unlocked ? opt.sum : '🔒'}</span><span class="opt-desc">${desc}</span>`;
+
+    if (unlocked) {
+      el.addEventListener('click', () => {
+        const idx = progress.targets.indexOf(opt.sum);
+        if (idx >= 0) {
+          progress.targets.splice(idx, 1);
+        } else if (progress.targets.length < MAX_SPECIAL_TARGETS) {
+          progress.targets.push(opt.sum);
+        }
+        saveProgress(progress);
+        renderTargetOptions();
+      });
+    }
+    targetOptionsEl.appendChild(el);
+  }
+}
+
+function openSelectScreen(): void {
+  renderTargetOptions();
+  homeScreen.classList.add('hidden');
+  selectScreen.classList.remove('hidden');
+}
+
 function startNewGame(): void {
-  game = new Game(computePerks(progress));
+  const perks = computePerks(progress);
+  const chosen = progress.targets
+    .filter((t) => perks.specialTargets.includes(t))
+    .slice(0, MAX_SPECIAL_TARGETS);
+  game = new Game({ ...perks, specialTargets: chosen });
+
   floats = [];
   dragAnchor = null;
   selection = null;
   resultShown = false;
   invalidateHint();
   homeScreen.classList.add('hidden');
+  selectScreen.classList.add('hidden');
   resultOverlay.classList.add('hidden');
   skillOverlay.classList.add('hidden');
   game.start();
@@ -198,8 +279,13 @@ function startNewGame(): void {
   updateHud();
 }
 
-startBtn.addEventListener('click', startNewGame);
-retryBtn.addEventListener('click', startNewGame);
+$('start-btn').addEventListener('click', openSelectScreen);
+$('play-btn').addEventListener('click', startNewGame);
+$('back-btn').addEventListener('click', () => {
+  selectScreen.classList.add('hidden');
+  homeScreen.classList.remove('hidden');
+});
+$('retry-btn').addEventListener('click', startNewGame);
 
 $('quit-btn').addEventListener('click', () => game.end());
 
@@ -210,12 +296,13 @@ $('home-btn').addEventListener('click', () => {
   updateBestDisplays();
 });
 
-rerollBtn.addEventListener('click', () => {
-  if (game.reroll()) {
+resetBtn.addEventListener('click', () => {
+  if (game.reset()) {
     navigator.vibrate?.(15);
     dragAnchor = null;
     selection = null;
     invalidateHint();
+    flashBoard('보드 초기화!');
     updateHud();
   }
 });
@@ -226,9 +313,18 @@ let skillReturnTo: HTMLElement = homeScreen;
 
 function onBuySkill(def: SkillDef): void {
   if (buySkill(progress, def)) {
+    // 새로 해금한 목표는 바로 선택에 추가 (최대치 내에서)
+    if (def.id === 'lucky_13' && skillLevel(progress, 'lucky_13') === 1) autoSelect(13);
+    if (def.id === 'double_20' && skillLevel(progress, 'double_20') === 1) autoSelect(20);
     saveProgress(progress);
     skillTree.refresh();
     updateCoinDisplays();
+  }
+}
+
+function autoSelect(sum: number): void {
+  if (!progress.targets.includes(sum) && progress.targets.length < MAX_SPECIAL_TARGETS) {
+    progress.targets.push(sum);
   }
 }
 
@@ -281,9 +377,9 @@ function frame(ts: number): void {
   for (const f of floats) f.ageMs += dt;
   floats = floats.filter((f) => f.ageMs < 800);
 
-  // 힌트: 스킬 보유 + 5초간 입력 없음 + 조합 존재 시 표시
+  // 힌트: 스킬 보유 + 5초간 입력 없음 시 표시
   let hint: HintView | null = null;
-  if (game.perks.hint && game.phase === 'playing' && game.combosAvailable) {
+  if (game.perks.hint && game.phase === 'playing') {
     if (!dragAnchor) idleMs += dt;
     if (idleMs >= HINT_IDLE_MS) {
       if (hintDirty) {
@@ -307,7 +403,7 @@ function updateHudTime(): void {
     timeEl.textContent = String(seconds);
     timeBarEl.classList.toggle('warning', seconds <= 10);
   }
-  timeBarEl.style.width = `${(game.timeLeftMs / game.durationMs) * 100}%`;
+  timeBarEl.style.width = `${Math.min(100, (game.timeLeftMs / game.durationMs) * 100)}%`;
 }
 
 requestAnimationFrame(frame);

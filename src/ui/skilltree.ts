@@ -28,8 +28,7 @@ const LAYOUT: Record<string, LayoutEntry> = {
   big_hunter: { icon: '🎣', x: -2.7, y: 0.3 },
   // 조합 — 위
   lucky_13: { icon: '🍀', x: 0.1, y: -1.4 },
-  time_17: { icon: '⏱️', x: -0.8, y: -2.4 },
-  double_20: { icon: '💎', x: 0.2, y: -3.3 },
+  double_20: { icon: '💎', x: -0.6, y: -2.5 },
   // 시간 — 오른쪽
   time_extend: { icon: '⏳', x: 1.4, y: 0.2 },
   hourglass: { icon: '⌛', x: 2.7, y: -0.5 },

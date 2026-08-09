@@ -8,8 +8,6 @@ import {
   crossNeighborTiles,
   findCombo,
   hasAnyCombo,
-  remainingTileCount,
-  rerollBoard,
   sumTiles,
   tilesInRect,
 } from './board';
@@ -33,15 +31,16 @@ export interface Perks {
   /** 5타일 이상 조합 점수 2배 */
   bigHunter: boolean;
   extraTimeMs: number;
-  /** 제거 성공마다 추가되는 시간 (모래시계) */
+  /** 합 10 제거 시 기본 +1초에 더해지는 추가 시간 (모래시계) */
   timePerClearMs: number;
   /** 마지막 15초 점수 1.5배 */
   lastSpurt: boolean;
-  rerolls: number;
-  /** 리롤 직후 10초 점수 1.3배 */
-  rerollRush: boolean;
+  /** 판당 보드 초기화 가능 횟수 */
+  resets: number;
+  /** 초기화 직후 10초 점수 1.3배 */
+  resetRush: boolean;
   hint: boolean;
-  /** 해금된 특수 목표 합 (13, 17, 20) */
+  /** 이 판에서 사용할 특수 목표 합 (선택 화면에서 확정, 최대 3개) */
   specialTargets: number[];
 }
 
@@ -51,15 +50,16 @@ export const BASE_PERKS: Perks = {
   extraTimeMs: 0,
   timePerClearMs: 0,
   lastSpurt: false,
-  rerolls: 1,
-  rerollRush: false,
+  resets: 1,
+  resetRush: false,
   hint: false,
   specialTargets: [],
 };
 
 const LAST_SPURT_WINDOW_MS = 15_000;
-const REROLL_RUSH_WINDOW_MS = 10_000;
-const TIME_17_BONUS_MS = 3_000;
+const RESET_RUSH_WINDOW_MS = 10_000;
+/** 합 10 제거 시 기본 시간 보너스 */
+const TIME_PER_TEN_MS = 1_000;
 const CROSS_EXPLOSION_POINTS = 3;
 const BIG_HUNTER_MIN_TILES = 5;
 
@@ -73,9 +73,22 @@ export interface ClearAttempt {
   extraTiles: number[];
   points: number;
   timeBonusMs: number;
+  /** 17 효과로 1이 된 7의 개수 */
+  convertedSevens: number;
+  /** 이번 제거로 조합이 고갈되어 보드가 자동 초기화됐는가 */
+  boardReset: boolean;
 }
 
-const MISS: ClearAttempt = { cleared: false, sum: 0, tiles: [], extraTiles: [], points: 0, timeBonusMs: 0 };
+const MISS: ClearAttempt = {
+  cleared: false,
+  sum: 0,
+  tiles: [],
+  extraTiles: [],
+  points: 0,
+  timeBonusMs: 0,
+  convertedSevens: 0,
+  boardReset: false,
+};
 
 export class Game {
   readonly config: GameConfig;
@@ -88,22 +101,22 @@ export class Game {
   phase: Phase = 'ready';
   score = 0;
   timeLeftMs: number;
-  rerollsLeft: number;
+  resetsLeft: number;
   combosAvailable = true;
 
-  /** 리롤 러시가 유지되는 timeLeftMs 하한 (이 값보다 클 때 활성) */
-  private rerollRushFloor = Infinity;
+  /** 리셋 러시가 유지되는 timeLeftMs 하한 (이 값보다 클 때 활성) */
+  private resetRushFloor = Infinity;
   private rng: Rng;
 
   constructor(perks: Perks = BASE_PERKS, config: GameConfig = DEFAULT_CONFIG, rng: Rng = Math.random) {
     this.config = config;
     this.perks = perks;
-    this.targets = [TARGET_SUM, ...perks.specialTargets];
+    this.targets = [TARGET_SUM, ...perks.specialTargets].sort((a, b) => a - b);
     this.rng = rng;
     this.board = createBoard(config.cols, config.rows, rng);
     this.durationMs = config.durationMs + perks.extraTimeMs;
     this.timeLeftMs = this.durationMs;
-    this.rerollsLeft = perks.rerolls;
+    this.resetsLeft = perks.resets;
     this.combosAvailable = hasAnyCombo(this.board, this.targets);
   }
 
@@ -133,12 +146,12 @@ export class Game {
   currentMultiplier(): number {
     let mult = this.perks.scoreMultiplier;
     if (this.perks.lastSpurt && this.timeLeftMs <= LAST_SPURT_WINDOW_MS) mult *= 1.5;
-    if (this.rerollRushActive()) mult *= 1.3;
+    if (this.resetRushActive()) mult *= 1.3;
     return mult;
   }
 
-  rerollRushActive(): boolean {
-    return this.perks.rerollRush && this.timeLeftMs > this.rerollRushFloor;
+  resetRushActive(): boolean {
+    return this.perks.resetRush && this.timeLeftMs > this.resetRushFloor;
   }
 
   /** 드래그를 놓았을 때의 판정. 합이 목표 합이면 제거하고 점수를 더한다. */
@@ -156,6 +169,18 @@ export class Game {
     clearTiles(this.board, tiles);
     clearTiles(this.board, extraTiles);
 
+    // 17: 보드의 모든 7이 1로 변환 (새 조합 재료 생성)
+    let convertedSevens = 0;
+    if (sum === 17) {
+      this.board.cells = this.board.cells.map((v) => {
+        if (v === 7) {
+          convertedSevens++;
+          return 1;
+        }
+        return v;
+      });
+    }
+
     let base = scoreForClear(tiles.length);
     if (this.perks.bigHunter && tiles.length >= BIG_HUNTER_MIN_TILES) base *= 2;
     base += extraTiles.length * CROSS_EXPLOSION_POINTS;
@@ -163,30 +188,42 @@ export class Game {
     const points = Math.round(base * this.currentMultiplier());
     this.score += points;
 
-    // 타임 17 + 모래시계
-    let timeBonusMs = this.perks.timePerClearMs;
-    if (sum === 17) timeBonusMs += TIME_17_BONUS_MS;
-    if (timeBonusMs > 0) {
-      this.timeLeftMs = Math.min(this.durationMs, this.timeLeftMs + timeBonusMs);
+    // 합 10 제거는 기본 +1초, 모래시계 스킬만큼 추가
+    let timeBonusMs = 0;
+    if (sum === TARGET_SUM) {
+      timeBonusMs = TIME_PER_TEN_MS + this.perks.timePerClearMs;
+      this.timeLeftMs += timeBonusMs;
     }
 
+    // 조합 고갈 → 보드 전체 자동 초기화
     this.combosAvailable = hasAnyCombo(this.board, this.targets);
-    return { cleared: true, sum, tiles, extraTiles, points, timeBonusMs };
+    let boardReset = false;
+    if (!this.combosAvailable) {
+      this.regenerateBoard();
+      boardReset = true;
+    }
+
+    return { cleared: true, sum, tiles, extraTiles, points, timeBonusMs, convertedSevens, boardReset };
   }
 
-  canReroll(): boolean {
-    return this.phase === 'playing' && this.rerollsLeft > 0 && remainingTileCount(this.board) > 0;
+  canReset(): boolean {
+    return this.phase === 'playing' && this.resetsLeft > 0;
   }
 
-  reroll(): boolean {
-    if (!this.canReroll()) return false;
-    this.rerollsLeft--;
-    rerollBoard(this.board, this.targets, this.rng);
-    this.combosAvailable = hasAnyCombo(this.board, this.targets);
-    if (this.perks.rerollRush) {
-      this.rerollRushFloor = this.timeLeftMs - REROLL_RUSH_WINDOW_MS;
+  /** 수동 초기화: 보드 전체를 새로 생성 (횟수 소모) */
+  reset(): boolean {
+    if (!this.canReset()) return false;
+    this.resetsLeft--;
+    this.regenerateBoard();
+    if (this.perks.resetRush) {
+      this.resetRushFloor = this.timeLeftMs - RESET_RUSH_WINDOW_MS;
     }
     return true;
+  }
+
+  private regenerateBoard(): void {
+    this.board = createBoard(this.config.cols, this.config.rows, this.rng);
+    this.combosAvailable = hasAnyCombo(this.board, this.targets);
   }
 
   /** 힌트 스킬용: 현재 보드에서 성립 가능한 가장 작은 조합 */
