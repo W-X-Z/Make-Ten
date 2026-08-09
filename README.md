@@ -33,6 +33,34 @@ npm run preview      # 빌드 결과 미리보기
 모바일 우선 UI지만 데스크톱 브라우저에서도 마우스 드래그로 플레이할 수 있다.
 크롬 개발자도구(F12) → 기기 에뮬레이션(Ctrl+Shift+M)으로 모바일 화면을 시뮬레이션할 수 있다.
 
+### 안드로이드 앱 빌드 (플레이스토어)
+
+푸시할 때마다 GitHub Actions(`android-build.yml`)가 Capacitor로 AAB를 빌드한다.
+Actions 탭 → 최신 "Build Android App Bundle" 실행 → Artifacts에서 다운로드:
+
+- `make-ten-release-aab` — 플레이스토어 업로드용 (서명 시크릿 등록 시 서명됨)
+- `make-ten-debug-apk` — 기기에 직접 설치해보는 테스트용
+
+**릴리스 서명 설정 (최초 1회)** — 업로드 키를 만들고 레포 시크릿에 등록:
+
+```bash
+keytool -genkeypair -v -keystore upload-keystore.jks -alias upload \
+  -keyalg RSA -keysize 2048 -validity 10000
+base64 -w0 upload-keystore.jks   # 이 출력값을 시크릿에 등록
+```
+
+레포 Settings → Secrets and variables → Actions에 등록할 시크릿 4개:
+
+| 시크릿 | 값 |
+|---|---|
+| `ANDROID_KEYSTORE_BASE64` | 키스토어 파일의 base64 |
+| `ANDROID_KEYSTORE_PASSWORD` | 키스토어 비밀번호 |
+| `ANDROID_KEY_ALIAS` | `upload` (생성 시 지정한 alias) |
+| `ANDROID_KEY_PASSWORD` | 키 비밀번호 |
+
+키스토어 파일(`.jks`)은 절대 커밋하지 말고 안전한 곳에 백업할 것.
+플레이 콘솔에서는 **Play App Signing**(기본값)을 사용 — 위 키는 "업로드 키"가 되고, 분실 시 구글에 재설정을 요청할 수 있다.
+
 ### 테스트 치트 (URL 파라미터)
 
 | 파라미터 | 효과 |

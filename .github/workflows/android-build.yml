@@ -1,0 +1,70 @@
+name: Build Android App Bundle
+
+on:
+  push:
+    branches:
+      - main
+      - claude/mobile-number-puzzle-game-xz3hx9
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - run: npm ci
+      - run: npm run build
+      - run: npx cap sync android
+
+      # 서명 키 시크릿이 등록돼 있으면 릴리스 서명 설정을 생성
+      - name: Configure release signing
+        if: env.KEYSTORE_BASE64 != ''
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 -d > android/upload-keystore.jks
+          cat > android/keystore.properties <<EOF
+          storeFile=../upload-keystore.jks
+          storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
+          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
+          EOF
+
+      - name: Build release AAB
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew bundleRelease
+
+      - name: Build debug APK (기기 직접 설치 테스트용)
+        working-directory: android
+        run: ./gradlew assembleDebug
+
+      - name: Report signing status
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "✅ 서명된 릴리스 AAB (플레이스토어 업로드 가능)"
+          else
+            echo "⚠️ 서명 시크릿 미등록 — 서명되지 않은 AAB (플레이스토어 업로드 불가, 빌드 검증용)"
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: make-ten-release-aab
+          path: android/app/build/outputs/bundle/release/app-release*.aab
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: make-ten-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk

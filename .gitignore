@@ -2,3 +2,8 @@ node_modules/
 dist/
 *.local
 .DS_Store
+
+# 앱 서명 키 — 절대 커밋 금지
+*.jks
+*.keystore
+android/keystore.properties

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Make Ten</string>
+    <string name="title_activity_main">Make Ten</string>
+    <string name="package_name">com.wxz.maketen</string>
+    <string name="custom_url_scheme">com.wxz.maketen</string>
+</resources>
